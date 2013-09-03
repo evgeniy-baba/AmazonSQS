@@ -491,23 +491,29 @@ class Manager
      * 
      * @return \AmazonSQS\Model\Queue
      */
-    public function loadQueueAttributes(Queue $queue)
+    public function loadQueueAttributes(Queue $queue, $attribute = 'All')
     {
-        $params['AttributeName.1'] = 'All';
+        $params['AttributeName.1'] = $attribute;
 
         $response = $this->call('GetQueueAttributes', $params, $queue->getUrl());
 
         $data = array();
-        foreach ($response['Attribute'] as $attribute) {
+        if ($attribute !== 'All') {
+            $attribute = $response['Attribute'];
             $key = lcfirst($attribute['Name']);
             $data[$key] = $attribute['Value'];
+        } else {
+            foreach ($response['Attribute'] as $attribute) {
+                $key = lcfirst($attribute['Name']);
+                $data[$key] = $attribute['Value'];
+            }
         }
-        
+
         $data = array_merge($this->getSerializer()->normalize($queue), $data);
         $queue = $this->getSerializer()->denormalize($data, '\AmazonSQS\Model\Queue');
 
         $this->getQueueStorage()->add($queue);
-        
+
         return $queue;
     }
 
